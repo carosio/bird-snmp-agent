@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+
+from bird	import Bird
+
+if __name__ == "__main__":
+	bird_agentx = Bird("/etc/bird.conf", '/usr/sbin/birdc')
+	bird_agentx.run()
