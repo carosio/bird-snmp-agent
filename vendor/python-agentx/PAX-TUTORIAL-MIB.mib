@@ -1,0 +1,143 @@
+PAX-TUTORIAL-MIB DEFINITIONS ::= BEGIN
+
+-- imports
+IMPORTS
+        MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE, enterprises	FROM SNMPv2-SMI
+	agentxObjects							FROM AGENTX-MIB;
+
+-- description and update information
+paxTutorialMIB MODULE-IDENTITY
+    LAST-UPDATED "201009260000Z"
+    ORGANIZATION "N/A"
+    CONTACT-INFO "web: http://sf.net/projects/python-agentx/"
+    DESCRIPTION  "A simple mib to demonstrate features of python-agentx module."
+    ::= { agentxObjects 30185 }
+
+-- define mib nodes
+paxData			OBJECT IDENTIFIER ::= { paxTutorialMIB 1 }
+paxAgentData		OBJECT IDENTIFIER ::= { paxData 1 }
+paxAgentConfig		OBJECT IDENTIFIER ::= { paxData 2 }
+paxAgentTables		OBJECT IDENTIFIER ::= { paxData 3 }
+paxAgentTraps		OBJECT IDENTIFIER ::= { paxData 4 }
+
+-- define a table that will be used to demonstrate how tables can
+-- be used in python agentx module
+paxTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF paxTableEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                 "An entry in the PAX Table."
+        ::= {  paxAgentTables 1 }
+
+paxTableEntry ::= SEQUENCE {
+                          paxTableIndex      INTEGER,
+                          paxTableKey        INTEGER,
+                          paxTableValue      STRING,
+                        }
+
+-- table entry point
+paxTableEntry OBJECT-TYPE
+        SYNTAX paxTableEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "A paxTable entry"
+        INDEX   { paxIndex }
+        ::= { paxTable 1 }
+
+-- index, integer value
+paxTableKey OBJECT-TYPE
+          SYNTAX INTEGER
+          MAX-ACCESS not-accessible
+          STATUS current
+          DESCRIPTION
+                "A paxTable row index."
+          ::= { paxTableEntry 1 }
+
+-- key, integer value
+paxTableKey OBJECT-TYPE
+          SYNTAX INTEGER
+          MAX-ACCESS read-only
+          STATUS current
+          DESCRIPTION
+                "A key in the paxTable."
+          ::= { paxTableEntry 2 }
+
+-- value, stirng value
+paxTableValue OBJECT-TYPE
+          SYNTAX OCTET STRING
+          MAX-ACCESS read-only
+          STATUS current
+          DESCRIPTION
+                 "A value in the paxTable."
+          ::= { paxTableEntry 3 }
+
+-- define other variables
+paxModuleIntVarRO OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"This is read-only integer object."
+    DEFVAL { 0 }
+    ::= { paxAgentData 1 }
+
+paxModuleIntVar OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"This is read-write integer object."
+    DEFVAL { 1 }
+    ::= { paxAgentData 2 }
+
+paxModuleStrVar OBJECT-TYPE
+    SYNTAX      OCTET STRING 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"This is read-write string object."
+    DEFVAL { "Example String Value" }
+    ::= { paxAgentData 3 }
+
+paxModuleFloatVar OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This is read-write integer object."
+    DEFVAL { 1 }
+    ::= { paxAgentData 4 }
+
+
+-- trap object
+paxModuleTrap NOTIFICATION-TYPE
+        --OBJECTS { Host }
+        STATUS  current
+        DESCRIPTION  "MySQL storage now has sufficient disk space"
+        ::= { paxAgentTraps 1 }
+
+
+-- configuration objects
+paxReload OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Write 1 to this object to cause module reload."
+    DEFVAL { 1 }
+    ::= { paxAgentConfig 1 }
+
+paxShutdown OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Write 1 to this object to cause module to quit."
+    DEFVAL { 1 }
+    ::= { paxAgentConfig 2 }
+
+
+
+END
