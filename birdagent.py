@@ -99,6 +99,9 @@ class BirdAgent:
 			'bgpPeerIdentifier':                    SnmpIpAddress("0.0.0.0"),
 			'bgpPeerHoldTime':                      0,
 			'bgpPeerKeepAlive':                     0,
+			'bgpPeerState':                         1,
+			'bgpPeerInUpdates':                     SnmpCounter32(0),
+			'bgpPeerOutUpdates':                    SnmpCounter32(0),
 			'bgpPeerAdminStatus':                   2,
 			'bgpPeerConnectRetryInterval':          0,
 			'bgpPeerFsmEstablishedTime':            SnmpGauge32(0),
@@ -196,7 +199,10 @@ class BirdAgent:
 		# "with"-context-manager for Popen not available in python < 3.2
 		birdc = subprocess.Popen([self.birdcli, "show", "protocols", "all"], \
 				stdout=subprocess.PIPE)
-		for line in birdc.communicate()[0].split("\n"):
+		output = birdc.communicate()[0]
+		if birdc.returncode != 0:
+			print("ERROR: bird-CLI %s failed: %i"%(self.birdcli, birdc.returncode))
+		for line in output.split("\n"):
 			match = self._re_birdcli_bgp_begin.search(line)
 			if match:
 				bgp_proto = match.group(1)
