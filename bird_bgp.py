@@ -13,8 +13,8 @@
 # So this code is licensed under the GPLv3 (see COPYING.GPLv3).
 #
 
-from agentx import AgentX
-from agentx import SnmpGauge32, SnmpCounter32
+from adv_agentx import AgentX
+from adv_agentx import SnmpGauge32, SnmpCounter32
 import time, os
 
 from birdagent import BirdAgent

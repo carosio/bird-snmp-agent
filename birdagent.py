@@ -19,8 +19,8 @@ birdagent - agentx code for the bird routing daemon
 	used by bird_ospf - for the ospf-mib (not implemented)
 """
 
-from agentx import AgentX
-from agentx import SnmpGauge32,SnmpCounter32,SnmpIpAddress
+from adv_agentx import AgentX
+from adv_agentx import SnmpGauge32,SnmpCounter32,SnmpIpAddress
 import time,re,subprocess,glob
 
 class BirdAgent:
@@ -188,7 +188,7 @@ class BirdAgent:
 			if self._re_config_proto_end.search(line):
 				proto = None
 		if not cfg.has_key("timeformat"):
-			print("WARNING: timeformat not configured for this agents use.")
+			print("WARNING: timeformat not configured for this agent's use.")
 
 		state = cfg.copy()
 		bgp_proto = None
@@ -244,7 +244,7 @@ class BirdAgent:
 			state["bgp-peers"][proto]["bgpPeerLocalPort"] = 0
 			state["bgp-peers"][proto]["bgpPeerRemotePort"] = 0
 			if not bgp_sessions.has_key(state["bgp-peers"][proto]["bgpPeerRemoteAddr"]):
-				print("INFO: proto %s has no bgp session."%proto)
+				# print("INFO: proto %s has no bgp session."%proto)
 				continue
 			srcip,srcport,dstip,dstport = bgp_sessions[state["bgp-peers"][proto]["bgpPeerRemoteAddr"]]
 			if srcip != state["bgp-peers"][proto]["bgpPeerLocalAddr"] or \
