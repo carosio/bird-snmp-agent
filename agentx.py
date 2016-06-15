@@ -15,11 +15,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+#
+#  some adaption for SnmpGauge32/SnmpCounter32/SnmpIpAddress support:
+#  by Tobias Hintze <tobias.hintze@travelping.com>
+#  Copyright (c) 2016 Travelping GmbH <copyright@travelping.com>
+#  (The original was imported from http://python-agentx.sf.net at r8)
+#
 import ctypes, ctypes.util
 import time
 import signal
 import os
 import sys
+import socket # for inet_aton
 
 # export names
 __all__ = [
@@ -62,10 +70,19 @@ ASN_LONG_LEN			= 0x80
 ASN_EXTENSION_ID		= 0x1F
 ASN_BIT8			= 0x80
 
+ASN_IPADDRESS			= ASN_APPLICATION | 0x0
+ASN_COUNTER32			= ASN_APPLICATION | 0x1
 ASN_UNSIGNED			= ASN_APPLICATION | 0x2
 ASN_TIMETICKS			= ASN_APPLICATION | 0x3
 ASN_APP_FLOAT			= ASN_APPLICATION | 0x8
 ASN_APP_DOUBLE			= ASN_APPLICATION | 0x9
+
+
+# python lacks some primitive types to represent
+# some snmp types. define some wrapper types:
+class SnmpGauge32(int): pass
+class SnmpCounter32(int): pass
+class SnmpIpAddress(str): pass
 
 # asn opaque
 ASN_OPAQUE_TAG2			= 0x30
@@ -319,6 +336,16 @@ class RequestObject(object):
 		elif type(value) == float:
 			otype = ASN_APP_FLOAT
 			value = ctypes.pointer(ctypes.c_float(value))
+		elif type(value) == SnmpIpAddress:
+			otype = ASN_IPADDRESS
+			size = 4
+			value = ctypes.c_char_p(socket.inet_aton(value))
+		elif type(value) == SnmpCounter32:
+			otype = ASN_COUNTER32
+			value = ctypes.pointer(ctypes.c_uint(value))
+		elif type(value) == SnmpGauge32:
+			otype = ASN_UNSIGNED
+			value = ctypes.pointer(ctypes.c_uint(value))
 		axl.snmp_set_var_typed_value(self.__request.requestvb, otype, ctypes.cast(value, ctypes.POINTER(ctypes.c_ubyte)), size)
 		self.value = value
 
