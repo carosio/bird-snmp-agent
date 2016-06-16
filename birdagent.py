@@ -65,6 +65,8 @@ class BirdAgent:
 			}
 	_re_birdcli_bgp_end = re.compile("^$")
 
+	_re_birdcli_ospf_neighbor = re.compile("^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)")
+
 	_re_netstat = re.compile("^tcp\s+[0-9]+\s+[0-9]+\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+):([0-9]+)\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+):([0-9]+)\s+ESTABLISHED")
 
 	bgp_keys = [
@@ -144,12 +146,38 @@ class BirdAgent:
 	def bgpKeys():
 		return BirdAgent.bgp_keys
 
-	def getState(self):
+	def getOSPFState(self, ospf_instance):
 		"""
-		fetch state from:
-		* configuration file
-		* some `birdc` output
-		* some `netstat` output
+		fetch OSPF-related state from:
+		* parsing `birdc show ospf neighbors $ospf` output
+		"""
+
+		# "with"-context-manager for Popen not available in python < 3.2
+		birdc = subprocess.Popen([self.birdcli, "show", "ospf", "neighbors", ospf_instance], \
+				stdout=subprocess.PIPE)
+		output = birdc.communicate()[0]
+		if birdc.returncode != 0:
+			print("ERROR: bird-CLI (querying ospf neighbors) %s failed: %i"%(self.birdcli, birdc.returncode))
+
+		neighbors = {}
+		for line in output.split("\n"):
+			match = self._re_birdcli_ospf_neighbor.search(line)
+			if match:
+				rtrid, pri, state, deadtime, iface, rtrip = match.groups()
+				neighbors[rtrid] = {}
+				neighbors[rtrid]["pri"] = int(pri)
+				neighbors[rtrid]["state"] = state
+				neighbors[rtrid]["deadtime"] = deadtime
+				neighbors[rtrid]["iface"] = iface
+				neighbors[rtrid]["rtrip"] = rtrip
+		return {"ospf-neighbors":neighbors}
+
+	def getBGPState(self):
+		"""
+		fetch BGP-related state from:
+		* parsing configuration file
+		* parsing `birdc show protocols all` output
+		* parsing `netstat` output
 		"""
 
 		current_time = int(time.time())

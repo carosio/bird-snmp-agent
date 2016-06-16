@@ -14,7 +14,7 @@
 #
 
 from adv_agentx import AgentX
-from adv_agentx import SnmpGauge32, SnmpCounter32
+from adv_agentx import SnmpGauge32, SnmpCounter32, SnmpIpAddress
 import time, os
 
 from birdagent import BirdAgent
@@ -39,54 +39,54 @@ def OnInit(ax, axd):
 ## this function is called when a new snmp request has been received and
 ## if CacheInterval has expired at that time
 def OnUpdate(ax, axd, state):
-	print('updated bird-bgp state: {0}'.format(time.time()))
+	def state2int(state):
+		# FIXME i need more samples of `birdc show ospf neighbors`
+		# for more fine-granular results here...
+		if state.lower().startswith("full"):
+			return 8
+		return 1
+	print('updated bird-ospf state: {0}'.format(time.time()))
 	## register variables
-	axd.RegisterVar('bgp', 0)
-	axd.RegisterVar('bgpVersion', "10")
-	axd.RegisterVar('bgpLocalAs', state.get("bgpLocalAs"))
+	axd.RegisterVar('ospf', 0)
 
-	# reindex by bgpPeerRemoteAddr
-	peers = {}
-	for peer in state["bgp-peers"].values():
-		peers[peer.get("bgpPeerRemoteAddr")] = peer
-
-	for snmpkey in BirdAgent.bgp_keys:
-		#axd.RegisterVar(snmpkey, 0)
-		for peer in sorted(peers.keys(), BirdAgent.ipCompare):
-			oid = "%s.%s"%(snmpkey, peer)
-			if peers[peer].has_key(snmpkey):
-				axd.RegisterVar(oid, peers[peer][snmpkey])
-			else:
-				axd.RegisterVar(oid, BirdAgent.bgp_defaults[snmpkey])
+	for nbrid in sorted(state["ospf-neighbors"].keys(), BirdAgent.ipCompare):
+		nbr = state["ospf-neighbors"][nbrid]
+		axd.RegisterVar("ospfNbrIpAddr.%s.0"%nbrid, SnmpIpAddress(nbr["rtrip"]))
+		axd.RegisterVar("ospfNbrRtrId.%s.0"%nbrid, SnmpIpAddress(nbrid))
+		axd.RegisterVar("ospfNbrPriority.%s.0"%nbrid, nbr["pri"])
+		axd.RegisterVar("ospfNbrState.%s.0"%nbrid, state2int(nbr["state"]))
 	return
+
 
 
 # main program
 if __name__ == '__main__':
-	print('bird-bgp AgentX starting')
+	print('bird-ospf AgentX starting')
 
 	bird = BirdAgent( \
 			os.environ.get("BIRDCONF") or "/etc/bird/bird.conf", \
 			os.environ.get("BIRDCPATH") or "/usr/sbin/birdc", \
 			os.environ.get("NETSTATCMD") or "netstat -na")
 
+	instance = "o_main"
+
 	callbacks = {
 			"OnSnmpRead"    : OnSnmpRead,
 			"OnSnmpWrite"   : OnSnmpWrite,
 			"OnSnmpRequest" : OnSnmpRequest,
 			"OnInit"        : OnInit,
-			"OnUpdate"      : lambda ax, axd: OnUpdate(ax,axd,bird.getBGPState())
+			"OnUpdate"      : lambda ax, axd: OnUpdate(ax,axd,bird.getOSPFState(instance))
 			}
 
 	## initialize agentx module and run main loop
 	AgentX(
 		callbacks,
-		Name		= 'bird-bgp',
-		#RootOID = '1.3.6.1.2.1.15', # https://tools.ietf.org/html/draft-ietf-idr-bgp4-mib-06
-		MIBFile		= os.environ.get("BGPMIBFILE") or "/usr/share/bird-snmp/BGP4-MIB.txt",
-		RootOID = 'BGP4-MIB::bgp', # https://tools.ietf.org/html/draft-ietf-idr-bgp4-mib-06
+		Name		= 'bird-ospf',
+		#RootOID = '1.3.6.1.2.1.14',
+		MIBFile		= os.environ.get("OSPFMIBFILE") or "/usr/share/bird-snmp/OSPF-MIB.txt",
+		RootOID = 'OSPF-MIB::ospf',
 		CacheInterval	= int(os.environ.get("AGENTCACHEINTERVAL") or "30")
 	)
-	print('bird-bgp AgentX terminating')
+	print('bird-ospf AgentX terminating')
 
 # vim:ts=4:sw=4:noexpandtab
