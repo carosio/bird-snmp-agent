@@ -49,15 +49,21 @@ def OnUpdate(ax, axd, state):
 	## register variables
 	axd.RegisterVar('ospf', 0)
 
+	# get ip-sorted neighbors
+	nbrs = []
 	for nbrid in sorted(state["ospf-neighbors"].keys(), BirdAgent.ipCompare):
-		nbr = state["ospf-neighbors"][nbrid]
+		nbrs.append((nbrid, state["ospf-neighbors"][nbrid]))
+
+	# register in MIB-sort:
+	for nbrid, nbr in nbrs:
 		axd.RegisterVar("ospfNbrIpAddr.%s.0"%nbrid, SnmpIpAddress(nbr["rtrip"]))
+	for nbrid, nbr in nbrs:
 		axd.RegisterVar("ospfNbrRtrId.%s.0"%nbrid, SnmpIpAddress(nbrid))
+	for nbrid, nbr in nbrs:
 		axd.RegisterVar("ospfNbrPriority.%s.0"%nbrid, nbr["pri"])
+	for nbrid, nbr in nbrs:
 		axd.RegisterVar("ospfNbrState.%s.0"%nbrid, state2int(nbr["state"]))
 	return
-
-
 
 # main program
 if __name__ == '__main__':
