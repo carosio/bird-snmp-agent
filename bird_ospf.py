@@ -40,11 +40,24 @@ def OnInit(ax, axd):
 ## if CacheInterval has expired at that time
 def OnUpdate(ax, axd, state):
 	def state2int(state):
-		# FIXME i need more samples of `birdc show ospf neighbors`
-		# for more fine-granular results here...
 		if state.lower().startswith("full"):
 			return 8
-		return 1
+		elif state.lower().startswith("loading"):
+			return 7
+		elif state.lower().startswith("exchange"):
+			return 6
+		elif state.lower().startswith("exstart"):
+			return 5
+		elif state.lower().startswith("2-way"):
+			return 4
+		elif state.lower().startswith("init"):
+			return 3
+		elif state.lower().startswith("attempt"):
+			return 2
+		elif state.lower().startswith("down"):
+			return 1
+		else:
+			return 1
 	print('updated bird-ospf state: {0}'.format(time.time()))
 	## register variables
 	axd.RegisterVar('ospf', 0)
