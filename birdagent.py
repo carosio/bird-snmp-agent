@@ -40,7 +40,7 @@ class BirdAgent:
 	}
 
 	_re_config_include = re.compile("^include\s*\"(/[^\"]*)\".*$")
-	_re_config_bgp_proto_begin = re.compile("^protocol bgp ([a-zA-Z0-9_]+) \{$")
+	_re_config_bgp_proto_begin = re.compile("^protocol bgp ([a-zA-Z0-9_]+) .* \{$")
 	_re_config_local_as = re.compile("local ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) as ([0-9]+);")
 	_re_config_bgp_holdtime = re.compile("hold time ([0-9]+);")
 	_re_config_bgp_keepalive = re.compile("keepalive time ([0-9]+);")
@@ -99,8 +99,11 @@ class BirdAgent:
 
 	bgp_defaults = {
 			'bgpPeerIdentifier':                    SnmpIpAddress("0.0.0.0"),
+			'bgpPeerLocalAddr':                     SnmpIpAddress("0.0.0.0"),
 			'bgpPeerHoldTime':                      0,
+			'bgpPeerHoldTimeConfigured':            0,
 			'bgpPeerKeepAlive':                     0,
+			'bgpPeerKeepAliveConfigured':           0,
 			'bgpPeerState':                         1,
 			'bgpPeerInUpdates':                     SnmpCounter32(0),
 			'bgpPeerOutUpdates':                    SnmpCounter32(0),
@@ -234,6 +237,7 @@ class BirdAgent:
 			match = self._re_birdcli_bgp_begin.search(line)
 			if match:
 				bgp_proto = match.group(1)
+				state["bgp-peers"][bgp_proto] = {}
 				timestamp = int(match.group(2))
 				if not state["bgp-peers"].has_key(bgp_proto):
 					print("WARNING: proto \"%s\" not in config, skipping"%bgp_proto)

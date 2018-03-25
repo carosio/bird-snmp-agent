@@ -43,7 +43,8 @@ def OnUpdate(ax, axd, state):
 	## register variables
 	axd.RegisterVar('bgp', 0)
 	axd.RegisterVar('bgpVersion', "10")
-	axd.RegisterVar('bgpLocalAs', state.get("bgpLocalAs"))
+	axd.RegisterVar('bgpLocalAs', 0)
+	axd.RegisterVar('bgpLocalAs.0', state.get("bgpLocalAs"))
 
 	# reindex by bgpPeerRemoteAddr
 	peers = {}
@@ -51,7 +52,7 @@ def OnUpdate(ax, axd, state):
 		peers[peer.get("bgpPeerRemoteAddr")] = peer
 
 	for snmpkey in BirdAgent.bgp_keys:
-		#axd.RegisterVar(snmpkey, 0)
+		axd.RegisterVar(snmpkey, 0)
 		for peer in sorted(peers.keys(), BirdAgent.ipCompare):
 			oid = "%s.%s"%(snmpkey, peer)
 			if peers[peer].has_key(snmpkey):
